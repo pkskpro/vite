@@ -13,7 +13,7 @@ import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import type { HMRChannel } from './hmr'
+import type { HotChannel } from './hmr'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -31,7 +31,7 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
-export interface WebSocketServer extends HMRChannel {
+export interface WebSocketServer extends HotChannel {
   /**
    * Listen on port and host
    */
@@ -223,7 +223,6 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
-    name: 'ws',
     listen: () => {
       wsHttpServer?.listen(port, host)
     },

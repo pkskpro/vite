@@ -41,7 +41,7 @@ import {
 } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { Environment } from '../environment'
+import type { Environment } from '../environment'
 import { checkPublicFile } from '../publicDir'
 import {
   arraify,
@@ -71,6 +71,7 @@ import type { Logger } from '../logger'
 import { cleanUrl, slash } from '../../shared/utils'
 import { createIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
+import { ScanEnvironment } from '../optimizer/scan'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -1480,7 +1481,7 @@ export async function preprocessCSS(
   // Backward compatibility, only the name is needed for the alias and resolve plugins used in the resolvers
   // TODO: Should we use environmentName instead of environment for these APIs?
   // Should the signature be preprocessCSS(code, filename, environment) or preprocessCSS(code, filename, config, environmentName)?
-  environment: Environment = new Environment('client', config),
+  environment: Environment = new ScanEnvironment('client', config),
 ): Promise<PreprocessCSSResult> {
   let workerController = preprocessorWorkerControllerCache.get(config)
 

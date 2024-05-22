@@ -249,8 +249,6 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
-  // TODO: Could we avoid the creation of a DevEnvironment moving the plugin resolving to
-  // the Environment base class?
   const environment = new ScanEnvironment('client', config)
   await environment.init()
 

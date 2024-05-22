@@ -6,13 +6,13 @@ import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import type { Environment } from '../environment'
 import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isCSSRequest } from '../plugins/css'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
+import type { Environment } from '../environment'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from './moduleGraph'
@@ -36,8 +36,6 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: Server
-  /** @internal */
-  channels?: HMRChannel[]
 }
 
 export interface HotUpdateContext {
@@ -79,11 +77,7 @@ export interface HMRBroadcasterClient {
   send(event: string, payload?: CustomPayload['data']): void
 }
 
-export interface HMRChannel {
-  /**
-   * Unique channel name
-   */
-  name: string
+export interface HotChannel {
   /**
    * Broadcast events to all clients
    */
@@ -116,18 +110,6 @@ export interface HMRChannel {
    * Disconnect all clients, called when server is closed or restarted.
    */
   close(): void
-}
-
-export interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
-  /**
-   * All registered channels. Always has websocket channel.
-   */
-  readonly channels: HMRChannel[]
-  /**
-   * Add a new third-party channel.
-   */
-  addChannel(connection: HMRChannel): HMRBroadcaster
-  close(): Promise<unknown[]>
 }
 
 export function getShortName(file: string, root: string): string {
@@ -816,56 +798,7 @@ async function readModifiedFile(file: string): Promise<string> {
   }
 }
 
-export function createHMRBroadcaster(): HMRBroadcaster {
-  const channels: HMRChannel[] = []
-  const readyChannels = new WeakSet<HMRChannel>()
-  const broadcaster: HMRBroadcaster = {
-    get channels() {
-      return [...channels]
-    },
-    addChannel(channel) {
-      if (channels.some((c) => c.name === channel.name)) {
-        throw new Error(`HMR channel "${channel.name}" is already defined.`)
-      }
-      channels.push(channel)
-      return broadcaster
-    },
-    on(event: string, listener: (...args: any[]) => any) {
-      // emit connection event only when all channels are ready
-      if (event === 'connection') {
-        // make a copy so we don't wait for channels that might be added after this is triggered
-        const channels = this.channels
-        channels.forEach((channel) =>
-          channel.on('connection', () => {
-            readyChannels.add(channel)
-            if (channels.every((c) => readyChannels.has(c))) {
-              listener()
-            }
-          }),
-        )
-        return
-      }
-      channels.forEach((channel) => channel.on(event, listener))
-      return
-    },
-    off(event, listener) {
-      channels.forEach((channel) => channel.off(event, listener))
-      return
-    },
-    send(...args: any[]) {
-      channels.forEach((channel) => channel.send(...(args as [any])))
-    },
-    listen() {
-      channels.forEach((channel) => channel.listen())
-    },
-    close() {
-      return Promise.all(channels.map((channel) => channel.close()))
-    },
-  }
-  return broadcaster
-}
-
-export interface ServerHMRChannel extends HMRChannel {
+export interface ServerHMRChannel extends HotChannel {
   api: {
     innerEmitter: EventEmitter
     outsideEmitter: EventEmitter
@@ -877,7 +810,6 @@ export function createServerHMRChannel(): ServerHMRChannel {
   const outsideEmitter = new EventEmitter()
 
   return {
-    name: 'ssr',
     send(...args: any[]) {
       let payload: HMRPayload
       if (typeof args[0] === 'string') {
@@ -911,13 +843,12 @@ export function createServerHMRChannel(): ServerHMRChannel {
   }
 }
 
-export function createNoopHMRChannel(): HMRChannel {
+export function createNoopHMRChannel(): HotChannel {
   function noop() {
     // noop
   }
 
   return {
-    name: 'noop',
     send: noop,
     on: noop,
     off: noop,

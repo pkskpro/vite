@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { definePlugin } from '../../plugins/define'
 import { resolveConfig } from '../../config'
-import { Environment } from '../../environment'
+import { ScanEnvironment } from '../../optimizer/scan'
 
 async function createDefinePluginTransform(
   define: Record<string, any> = {},
@@ -13,7 +13,7 @@ async function createDefinePluginTransform(
     build ? 'build' : 'serve',
   )
   const instance = definePlugin(config)
-  const environment = new Environment(ssr ? 'ssr' : 'client', config)
+  const environment = new ScanEnvironment(ssr ? 'ssr' : 'client', config)
 
   return async (code: string) => {
     // @ts-expect-error transform should exist

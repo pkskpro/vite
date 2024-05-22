@@ -54,7 +54,6 @@ export type {
 } from './config'
 export type {
   EnvironmentPlugin,
-  PluginEnvironment,
   Plugin,
   EnvironmentPluginOptionArray,
   PluginOption,
@@ -152,8 +151,7 @@ export type {
 export type { HmrOptions, HmrContext, HotUpdateContext } from './server/hmr'
 
 export type {
-  HMRBroadcaster,
-  HMRChannel,
+  HotChannel,
   ServerHMRChannel,
   HMRBroadcasterClient,
 } from './server/hmr'

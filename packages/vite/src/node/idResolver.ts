@@ -1,13 +1,12 @@
 import type { PartialResolvedId } from 'rollup'
 import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from './config'
-import type { Environment } from './environment'
-import type { PluginEnvironment } from './plugin'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
 import { resolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import { getFsUtils } from './fsUtils'
+import type { Environment } from './environment'
 
 export type ResolveIdFn = (
   environment: Environment,
@@ -28,7 +27,7 @@ export function createIdResolver(
 
   const pluginContainerMap = new Map<Environment, EnvironmentPluginContainer>()
   async function resolve(
-    environment: PluginEnvironment,
+    environment: Environment,
     id: string,
     importer?: string,
   ): Promise<PartialResolvedId | null> {
@@ -59,7 +58,7 @@ export function createIdResolver(
     EnvironmentPluginContainer
   >()
   async function resolveAlias(
-    environment: PluginEnvironment,
+    environment: Environment,
     id: string,
     importer?: string,
   ): Promise<PartialResolvedId | null> {
@@ -77,11 +76,7 @@ export function createIdResolver(
     const resolveFn = aliasOnly ? resolveAlias : resolve
     // aliasPlugin and resolvePlugin are implemented to function with a Environment only,
     // we cast it as PluginEnvironment to be able to use the pluginContainer
-    const resolved = await resolveFn(
-      environment as PluginEnvironment,
-      id,
-      importer,
-    )
+    const resolved = await resolveFn(environment, id, importer)
     return resolved?.id
   }
 }
